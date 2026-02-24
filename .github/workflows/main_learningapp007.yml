@@ -15,52 +15,24 @@ jobs:
     permissions:
       contents: read #This is required for actions/checkout
 
-    steps:
+steps:
       - uses: actions/checkout@v4
 
-      - name: Setup MSBuild path
-        uses: microsoft/setup-msbuild@v1.0.2
+      # 1. Setup the modern .NET SDK (Change to 8.0.x if you didn't upgrade to 10 yet)
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x' 
 
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1.0.5
+      # 2. Restore, Build, and Publish using the dotnet CLI
+      # IMPORTANT: If your .csproj is inside a subfolder, add the path here. 
+      # Example: run: dotnet publish ./learningapp/learningapp.csproj -c Release -o ./published
+      - name: Publish with dotnet
+        run: dotnet publish -c Release -o ./published
 
-      - name: Restore NuGet packages
-        run: nuget restore
-
-      - name: Publish to folder
-        run: msbuild /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="\published\"
-
+      # 3. Upload the compiled code for the deploy step
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: ASP-app
-          path: '/published/**'
-
-  deploy:
-    runs-on: windows-latest
-    needs: build
-    permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
-
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: ASP-app
-      
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_1F944B52EA0E4E38A3416F695001C716 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_23A6ED6BAE614D19A3577B7CF10F6DB8 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E101CCB36E5A425FBA87CF9A3E6BDF4B }}
-
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'learningapp007'
-          slot-name: 'Production'
-          package: .
-          
+          path: './published/**'
