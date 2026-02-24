@@ -13,12 +13,10 @@ jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
-steps:
+    steps:
       - uses: actions/checkout@v4
-
-      # 1. Setup the modern .NET SDK (Change to 8.0.x if you didn't upgrade to 10 yet)
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
